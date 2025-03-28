@@ -13,14 +13,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserPermission {
+  ADMIN
+  CAN_EDIT
+  READ_ONLY
+}
+
+enum UseCase {
+  WORK
+  STUDY
+  PERSONAL_USE
+}
+
 model User {
-  id           Int            @id @default(autoincrement())
-  email        String         @unique
-  username     String
-  password     String
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  RefreshToken RefreshToken[]
+  id                 Int            @id @default(autoincrement())
+  email              String         @unique
+  name               String
+  username           String         @unique
+  password           String
+  image              String?
+  completeOnBoarding Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  RefreshToken       RefreshToken[]
+  workspaces         WorkSpace[]
+  Subscriptions      Subscription[]
+  useCase            UseCase?
 }
 
 model RefreshToken {
@@ -30,4 +48,28 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id])
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model WorkSpace {
+  id         Int            @id @default(autoincrement())
+  name       String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  userId     Int?
+  user       User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Subscriber Subscription[]
+
+  @@index([userId])
+}
+
+model Subscription {
+  userId      Int
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId Int
+  workspace   WorkSpace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  useRole     UserPermission @default(READ_ONLY)
+
+  @@id([userId, workspaceId])
+  @@index([workspaceId])
+  @@index([userId])
 }

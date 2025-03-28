@@ -4,6 +4,7 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
@@ -20,10 +21,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // Check if the exception is an instance of HttpException
     if (exception instanceof HttpException) {
       status = exception.getStatus(); // Get the status code
-      errorMessage = exception.getResponse(); // Get the error response (could be a string or object)
-    } else if (exception instanceof HttpException) {
+      errorMessage = exception.message; // Get the error response (could be a string or object)
+      console.log(exception.message);
+    } else if (exception instanceof BadRequestException) {
       status = exception.getStatus(); // Get the status code
-      errorMessage = exception.getResponse(); // Get the error response (could be a string or object)
+      errorMessage = exception.message; // Get the error response (could be a string or object)
     } else {
       // If it's not an instance of HttpException, assume an internal server error
       status = HttpStatus.INTERNAL_SERVER_ERROR;

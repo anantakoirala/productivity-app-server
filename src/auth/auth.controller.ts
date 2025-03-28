@@ -1,15 +1,46 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
-import { SignUpDto } from './dto/signup.dto';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/decorators/getUser';
+import { SignUpDto } from './dto/signup.dto';
 import { SignInDto } from './dto/signin.dto';
-import { Response } from 'express';
 
+//@UsePipes(ZodValidationPipe)
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
+
   @Post('signup')
-  async signUp(@Body() signUpData: SignUpDto) {
-    return await this.authService.signup(signUpData);
+  async signUp(@Body() signUpData: SignUpDto, @Res() res: Response) {
+    try {
+      await this.authService.signup(signUpData);
+
+      return res
+        .status(HttpStatus.CREATED)
+        .json({ success: true, message: 'User created successfully' });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unknown error occurred';
+
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
   }
   @Post('signin')
   async signIn(@Body() signInData: SignInDto, @Res() res: Response) {
@@ -17,10 +48,65 @@ export class AuthController {
     const result = await this.authService.signIn(signInData);
 
     const accessTokenExpiry = Number(
-      process.env.ACCESS_TOKEN_EXPIRY || '3600', // Default to 3600 seconds (1 hour)
+      this.configService.get<string>('jwt.access_token_expiry') || '3600', // Default to 3600 seconds (1 hour)
     );
     const refreshTokenExpiry = Number(
-      process.env.REFRESH_TOKEN_EXPIRY || '604800', // Default to 7 days in seconds
+      this.configService.get<string>('jwt.refresh_token_expiry') || '604800', // Default to 7 days in seconds
+    );
+
+    // Convert access token expiry to milliseconds
+    const accessTokenExpiryMs = accessTokenExpiry * 1000;
+    const refreshTokenExpiryMs = refreshTokenExpiry * 1000;
+
+    res.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      path: '/',
+      domain: isDevelopment ? 'localhost' : undefined, // Domain only for development
+      secure: !isDevelopment, // Secure is true in production
+      sameSite: isDevelopment ? 'lax' : 'none', // sameSite depends on environment
+      expires: new Date(Date.now() + refreshTokenExpiryMs),
+    });
+
+    res.cookie('token', result.accessToken, {
+      httpOnly: true,
+      path: '/',
+      domain: isDevelopment ? 'localhost' : undefined, // Domain only for development
+      secure: !isDevelopment, // Secure is true in production
+      sameSite: isDevelopment ? 'lax' : 'none', // sameSite depends on environment
+      expires: new Date(Date.now() + accessTokenExpiryMs),
+    });
+    return res.status(200).json({
+      success: true,
+      message: 'Login Successfully',
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  async getUser(
+    @GetUser() user: { userId: number },
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.authService.getUser(user.userId);
+    return res.status(200).json({ success: true, user: result });
+  }
+
+  @UseGuards(AuthGuard('refresh'))
+  @Post('refresh-token')
+  async generateRefreshToken(
+    @GetUser() user: { userId: number },
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const result = await this.authService.generateRefreshToken(user.userId);
+
+    const accessTokenExpiry = Number(
+      this.configService.get<string>('jwt.access_token_expiry') || '3600', // Default to 3600 seconds (1 hour)
+    );
+    const refreshTokenExpiry = Number(
+      this.configService.get<string>('jwt.refresh_token_expiry') || '604800', // Default to 7 days in seconds
     );
 
     // Convert access token expiry to milliseconds
@@ -45,6 +131,18 @@ export class AuthController {
     return res.status(200).json({
       success: true,
       message: 'Login Successfully',
+      refreshToken: result.refreshToken,
+      token: result.accessToken,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('logout')
+  logout(@Res() res: Response) {
+    this.authService.logout(res);
+    return res.status(HttpStatus.OK).json({
+      success: true,
+      message: 'LogOut Successfully',
     });
   }
 }
