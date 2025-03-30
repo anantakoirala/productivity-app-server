@@ -6,6 +6,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import { CreateWorkSpaceDto } from './dto/workspace.dto';
 
 @Injectable()
 export class UserService {
@@ -73,6 +74,57 @@ export class UserService {
       };
     } catch (error) {
       console.log('delete user image error', error);
+      throw error;
+    }
+  }
+
+  async createWorkspace(
+    userId: number,
+    file: any,
+    createWorkSpaceData: CreateWorkSpaceDto,
+  ) {
+    try {
+      console.log('userid', userId);
+      console.log('file', file);
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('user not found');
+      }
+      const transaction = await this.prisma.$transaction(async (prisma) => {
+        const updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            completeOnBoarding: true,
+            name: createWorkSpaceData.name,
+            useCase: createWorkSpaceData.useCase,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            completeOnBoarding: true,
+            useCase: true,
+          },
+        });
+        const workspace = await prisma.workSpace.create({
+          data: {
+            name: createWorkSpaceData.workspacename,
+            userId: userId,
+            image: file ? file.filename : null, // ✅ Assign filename if file exists
+          },
+        });
+
+        await prisma.subscription.create({
+          data: {
+            userId: userId,
+            workspaceId: workspace.id,
+          },
+        });
+        return updatedUser;
+      });
+      //const { password, ...remainingUserField } = transaction;
+      return { success: true, user: transaction };
+    } catch (error) {
       throw error;
     }
   }

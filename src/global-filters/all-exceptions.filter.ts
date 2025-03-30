@@ -33,7 +33,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Log the error response for debugging
-    console.log('error', { statusCode: status, message: errorMessage });
+    console.error('Exception Stack Trace:', exception);
 
     // Send the error response to the client
     response.status(status).json({

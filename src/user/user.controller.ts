@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Post,
@@ -11,6 +12,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from 'src/decorators/getUser';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateWorkSpaceDto } from './dto/workspace.dto';
 
 @Controller('user')
 export class UserController {
@@ -30,5 +32,20 @@ export class UserController {
   @Get('delete-user-image')
   deleteUserImage(@GetUser() user: { userId: number }) {
     return this.userService.deleteUserImage(user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('create-workspace')
+  @UseInterceptors(FileInterceptor('workspaceImage'))
+  createWorkSpace(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() createWorkSpaceData: CreateWorkSpaceDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.userService.createWorkspace(
+      user.userId,
+      file,
+      createWorkSpaceData,
+    );
   }
 }

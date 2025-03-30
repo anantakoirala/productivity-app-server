@@ -3,6 +3,8 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
+const MAX_FILE_SIZE = 500 * 1024; // 500KB
+
 export const multerConfig = {
   storage: diskStorage({
     destination: function (req, res, cb) {
@@ -17,7 +19,9 @@ export const multerConfig = {
       cb(null, uniqueName);
     },
   }),
+  limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (req: any, file, cb) => {
+    console.log('filetype', file.mimetype);
     if (
       file.mimetype == 'image/png' ||
       file.mimetype == 'image/jpg' ||
