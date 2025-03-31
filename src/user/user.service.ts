@@ -6,7 +6,10 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as bcrypt from 'bcrypt';
 import { CreateWorkSpaceDto } from './dto/workspace.dto';
+import { UpdateUserInfoDto } from './dto/updateUserInfo.dto';
+import { ChangePasswordDto } from './dto/changePasswordSchema';
 
 @Injectable()
 export class UserService {
@@ -84,11 +87,12 @@ export class UserService {
     createWorkSpaceData: CreateWorkSpaceDto,
   ) {
     try {
-      console.log('userid', userId);
-      console.log('file', file);
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
         throw new NotFoundException('user not found');
+      }
+      if (user.completeOnBoarding === true) {
+        throw new BadRequestException('Process is already completed');
       }
       const transaction = await this.prisma.$transaction(async (prisma) => {
         const updatedUser = await prisma.user.update({
@@ -104,6 +108,7 @@ export class UserService {
             email: true,
             completeOnBoarding: true,
             useCase: true,
+            username: true,
           },
         });
         const workspace = await prisma.workSpace.create({
@@ -124,6 +129,68 @@ export class UserService {
       });
       //const { password, ...remainingUserField } = transaction;
       return { success: true, user: transaction };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserInfo(updateUserInfoDto: UpdateUserInfoDto, userId: number) {
+    try {
+      const updateUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          name: updateUserInfoDto.name,
+          username: updateUserInfoDto.username,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          completeOnBoarding: true,
+          useCase: true,
+          username: true,
+        },
+      });
+      return { success: true, user: updateUser };
+    } catch (error) {
+      throw error;
+    }
+  }
+  async changePassword(changePasswordDto: ChangePasswordDto, userId: number) {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: { id: userId },
+      });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+      console.log('changePasswordDto', changePasswordDto);
+      const saltOrRounds = 10;
+      const password = changePasswordDto.new_password;
+      const hashedPassword = await bcrypt.hash(password, saltOrRounds);
+
+      const matchPassword = await bcrypt.compare(
+        changePasswordDto.current_password,
+        user.password,
+      );
+      if (!matchPassword) {
+        throw new BadRequestException('Current password doesnot match');
+      }
+      const updateUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          password: hashedPassword,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          completeOnBoarding: true,
+          useCase: true,
+          username: true,
+        },
+      });
+      return { success: true, user: updateUser };
     } catch (error) {
       throw error;
     }

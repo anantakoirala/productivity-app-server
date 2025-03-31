@@ -136,6 +136,7 @@ export class AuthService {
           email: true,
           image: true,
           completeOnBoarding: true,
+          username: true,
         },
       });
       if (!user) {

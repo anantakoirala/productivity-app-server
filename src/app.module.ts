@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from './user/user.module';
+import { WorkspaceModule } from './workspace/workspace.module';
 import config from '../config';
 
 @Module({
@@ -29,6 +30,8 @@ import config from '../config';
     }),
 
     UserModule,
+
+    WorkspaceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

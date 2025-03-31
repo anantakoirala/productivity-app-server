@@ -13,6 +13,8 @@ import { GetUser } from 'src/decorators/getUser';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateWorkSpaceDto } from './dto/workspace.dto';
+import { UpdateUserInfoDto } from './dto/updateUserInfo.dto';
+import { ChangePasswordDto } from './dto/changePasswordSchema';
 
 @Controller('user')
 export class UserController {
@@ -47,5 +49,23 @@ export class UserController {
       file,
       createWorkSpaceData,
     );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('update-user-info')
+  updateUserInfo(
+    @Body() updateUserInfoDto: UpdateUserInfoDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.userService.updateUserInfo(updateUserInfoDto, user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('change-password')
+  changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.userService.changePassword(changePasswordDto, user.userId);
   }
 }
