@@ -45,7 +45,6 @@ export class UserService {
 
   async deleteUserImage(userId: number) {
     try {
-      console.log('delete image');
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
         throw new NotFoundException('user not found');
@@ -123,6 +122,7 @@ export class UserService {
           data: {
             userId: userId,
             workspaceId: workspace.id,
+            useRole: 'ADMIN',
           },
         });
         return updatedUser;
