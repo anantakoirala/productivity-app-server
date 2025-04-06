@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateWorkSpaceDto } from './dto/workspace.dto';
 import { UpdateUserInfoDto } from './dto/updateUserInfo.dto';
 import { ChangePasswordDto } from './dto/changePasswordSchema';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UserService {
@@ -115,6 +116,10 @@ export class UserService {
             name: createWorkSpaceData.workspacename,
             userId: userId,
             image: file ? file.filename : null, // ✅ Assign filename if file exists
+            inviteCode: uuidv4(),
+            adminCode: uuidv4(),
+            canEditCode: uuidv4(),
+            readOnlyCode: uuidv4(),
           },
         });
 

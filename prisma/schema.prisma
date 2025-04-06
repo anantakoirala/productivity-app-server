@@ -51,14 +51,19 @@ model RefreshToken {
 }
 
 model WorkSpace {
-  id         Int            @id @default(autoincrement())
-  name       String
-  image      String?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  userId     Int?
-  user       User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Subscriber Subscription[]
+  id           Int            @id @default(autoincrement())
+  name         String
+  image        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  userId       Int?
+  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Subscriber   Subscription[]
+  inviteCode   String         @unique
+  adminCode    String         @unique
+  canEditCode  String         @unique
+  readOnlyCode String         @unique
+  Invitation   Invitation[]
 
   @@index([userId])
 }
@@ -73,4 +78,15 @@ model Subscription {
   @@id([userId, workspaceId])
   @@index([workspaceId])
   @@index([userId])
+}
+
+model Invitation {
+  id          Int            @id @default(autoincrement())
+  email       String
+  workspaceId Int
+  workspace   WorkSpace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  token       String
+  userRole    UserPermission @default(READ_ONLY)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }

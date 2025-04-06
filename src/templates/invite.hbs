@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <meta charset='UTF-8' />
+    <title>Workspace Invitation</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        padding: 2rem;
+        color: #333;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      }
+
+      h2 {
+        color: #2c3e50;
+      }
+
+      p {
+        line-height: 1.6;
+      }
+
+      a.button {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        background-color: #007bff;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 5px;
+      }
+
+      .footer {
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        color: #999;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <h2>You're Invited to Join "{{workspace}}"</h2>
+      <p>Hello,</p>
+      <p>
+        <strong>{{sender}}</strong>
+        has invited you to join the workspace
+        <strong>{{workspace}}</strong>
+        as a
+        <strong>{{role}}</strong>.
+      </p>
+      <p>Click the button below to accept the invitation:</p>
+      <p>{{link}}</p>
+      <a href='{{link}}' class='button'>Accept Invitation</a>
+      <p>If you weren’t expecting this invitation, feel free to ignore it.</p>
+      <div class='footer'>
+        &copy; Your App Name. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>

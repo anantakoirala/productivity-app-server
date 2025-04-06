@@ -6,4 +6,11 @@ export default () => ({
     access_token_expiry: process.env.ACCESS_TOKEN_EXPIRY,
     refresh_token_expiry: process.env.REFRESH_TOKEN_EXPIRY,
   },
+  smtp: {
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PORT: process.env.SMTP_PORT,
+    SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+  },
+  client_url: process.env.CLIENT_URL,
 });

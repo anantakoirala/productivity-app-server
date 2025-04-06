@@ -38,13 +38,34 @@ export class AuthService {
       if (checkUniqueUsername) {
         throw new BadRequestException('Username already exists');
       }
-      await this.prisma.user.create({
-        data: {
-          name: dto.name,
-          username: dto.username,
-          email: dto.email,
-          password: hashedPassword,
-        },
+
+      await this.prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            name: dto.name,
+            username: dto.username,
+            email: dto.email,
+            password: hashedPassword,
+          },
+        });
+
+        if (dto.token) {
+          const invitation = await tx.invitation.findFirst({
+            where: { token: dto.token, email: dto.email },
+          });
+
+          if (invitation) {
+            await tx.subscription.create({
+              data: {
+                userId: newUser.id,
+                workspaceId: invitation.workspaceId,
+                useRole: invitation.userRole,
+              },
+            });
+
+            await tx.invitation.delete({ where: { id: invitation.id } });
+          }
+        }
       });
 
       return { success: true, message: 'Registered successfully' };
@@ -68,7 +89,41 @@ export class AuthService {
 
       // Generate Tokens
       const token = this.generateUserTokens(user.id);
-      await this.storeRefreshToken(user.id, token.refreshToken);
+
+      await this.prisma.$transaction(async (tx) => {
+        // Store refresh token inside transaction
+
+        const expirySeconds =
+          Number(process.env.REFRESH_TOKEN_EXPIRY) || 604800; // Default to 7 days in seconds
+        const expiryDate = new Date(Date.now() + expirySeconds * 1000); // Convert seconds to milliseconds
+
+        await tx.refreshToken.create({
+          data: {
+            userId: user.id,
+            token: token.refreshToken,
+            expiresAt: expiryDate,
+          },
+        });
+        // If token exists, validate and create subscription inside the same transaction
+        if (dto.token) {
+          const invitation = await tx.invitation.findFirst({
+            where: { token: dto.token, email: dto.email },
+          });
+
+          if (invitation) {
+            await tx.subscription.create({
+              data: {
+                userId: user.id,
+                workspaceId: invitation.workspaceId,
+                useRole: invitation.userRole,
+              },
+            });
+
+            await tx.invitation.delete({ where: { id: invitation.id } });
+          }
+        }
+      });
+
       return {
         success: true,
         accessToken: token.accessToken,
@@ -77,6 +132,14 @@ export class AuthService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async validateInviteToken(token: string, email: string) {
+    const invitation = await this.prisma.invitation.findFirst({
+      where: { token: token, email: email },
+    });
+
+    return invitation;
   }
   generateUserTokens(userId: number) {
     // Retrieve expiry times from config and convert to numbers

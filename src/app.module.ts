@@ -8,7 +8,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from './user/user.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import config from '../config';
-
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { join } from 'path';
+import { PublicModule } from './public/public.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,9 +32,37 @@ import config from '../config';
       inject: [ConfigService],
     }),
 
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('smtp.SMTP_HOST'),
+          port: +configService.get<string>('smtp.SMTP_PORT'),
+          auth: {
+            user: configService.get<string>('smtp.SMTP_USER'),
+            pass: configService.get<string>('smtp.SMTP_PASSWORD'),
+          },
+        },
+        defaults: {
+          from: `"No Reply" <${configService.get<string>('smtp.SMTP_USER')}>`,
+        },
+        // Optional if you use handlebars templates
+        template: {
+          dir: join(__dirname, '..', 'templates'),
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+      }),
+    }),
+
     UserModule,
 
     WorkspaceModule,
+
+    PublicModule,
   ],
   controllers: [AppController],
   providers: [AppService],

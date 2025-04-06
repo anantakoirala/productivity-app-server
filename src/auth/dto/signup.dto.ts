@@ -8,6 +8,7 @@ const SignUpSchema = z
     email: z.string().email(),
     password: z.string().min(5).nonempty('Password is required'), // Ensures password is not empty,
     confirmPassword: z.string().nonempty('Confirm Password is required'),
+    token: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',

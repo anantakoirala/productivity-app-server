@@ -20,6 +20,7 @@ import { GetUser } from 'src/decorators/getUser';
 import { UpdateWorkspaceImageDto } from './dto/upload-workspace-image.dto';
 import { UpdateWorkSpaceDto } from './dto/update-workspace.dto';
 import { DeleteWorkspaceDto } from './dto/deleteWorkspace.dto';
+import { CreateInvitationDto } from './dto/createInvitation.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('workspace')
@@ -58,6 +59,25 @@ export class WorkspaceController {
     return this.workspaceService.getWorkspaceSettingDetail(+id, user.userId);
   }
 
+  @Get('user-role-for-workspace/:id')
+  userRoleForWorkspace(
+    @Param('id') id: string,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.workspaceService.userRoleForWorkspace(+id, user.userId);
+  }
+
+  @Post('create-invitation')
+  createInvitation(
+    @Body() createinvitation: CreateInvitationDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.workspaceService.createInvitation(
+      createinvitation,
+      user.userId,
+    );
+  }
+
   @Get()
   findAll(@GetUser() user: { userId: number }) {
     return this.workspaceService.findAll(user.userId);
@@ -77,8 +97,14 @@ export class WorkspaceController {
   }
 
   @Post('delete-workspace')
-  deleteWorkspace(@Body() deleteWorkspaceDto: DeleteWorkspaceDto) {
-    return this.workspaceService.deleteWorkspace(deleteWorkspaceDto);
+  deleteWorkspace(
+    @Body() deleteWorkspaceDto: DeleteWorkspaceDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.workspaceService.deleteWorkspace(
+      deleteWorkspaceDto,
+      user.userId,
+    );
   }
 
   @Delete(':id')
