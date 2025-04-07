@@ -12,6 +12,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { join } from 'path';
 import { PublicModule } from './public/public.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -63,6 +64,8 @@ import { PublicModule } from './public/public.module';
     WorkspaceModule,
 
     PublicModule,
+
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

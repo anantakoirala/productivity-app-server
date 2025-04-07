@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,6 +19,8 @@ import { CreateInvitationDto } from './dto/createInvitation.dto';
 import { UserPermission } from '@prisma/client';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
+import { ChangeUserRoleDto } from './dto/changeUserrole.dto';
+import { RemoveUserFromWorkspaceDto } from './dto/removeUserFromWorkspace.dto';
 
 @Injectable()
 export class WorkspaceService {
@@ -360,6 +364,133 @@ export class WorkspaceService {
         where: { email: email, workspaceId: workspaceId },
       });
       return !!existingInvitation; // returns true if found
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkspaceSubscribers(id: number) {
+    try {
+      const subscribers = await this.prisma.subscription.findMany({
+        where: { workspaceId: id },
+        include: {
+          user: {
+            select: { name: true, username: true, image: true, id: true },
+          },
+        },
+      });
+      const modifiedSubscribers = subscribers.map((subscriber) => ({
+        userId: subscriber.user.id,
+        userRole: subscriber.useRole,
+        name: subscriber.user.name,
+        userName: subscriber.user.username,
+        userImage: subscriber.user.image,
+        workspaceId: subscriber.workspaceId,
+      }));
+
+      return { success: true, subscribers: modifiedSubscribers };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async changeUserRole(changeUserRoleDto: ChangeUserRoleDto, userId: number) {
+    try {
+      console.log('changeUserRoledto', changeUserRoleDto);
+
+      const initiatorRole = await this.prisma.subscription.findFirst({
+        where: { userId: userId, workspaceId: changeUserRoleDto.workspaceId },
+      });
+
+      if (!initiatorRole) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+      if (
+        initiatorRole.useRole === 'CAN_EDIT' ||
+        initiatorRole.useRole === 'READ_ONLY'
+      ) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+      const subscriber = await this.prisma.subscription.findFirst({
+        where: {
+          userId: changeUserRoleDto.userId,
+          workspaceId: changeUserRoleDto.workspaceId,
+        },
+      });
+
+      if (!subscriber) {
+        throw new NotFoundException('User not found');
+      }
+
+      await this.prisma.subscription.update({
+        where: {
+          userId_workspaceId: {
+            userId: changeUserRoleDto.userId,
+            workspaceId: changeUserRoleDto.workspaceId,
+          },
+        },
+        data: {
+          useRole: { set: changeUserRoleDto.userRole as UserPermission },
+        },
+      });
+      return this.getWorkspaceSubscribers(changeUserRoleDto.workspaceId);
+    } catch (error) {
+      throw error;
+    }
+  }
+  async removeUserFromWorkspace(
+    removeUserFromWorkspaceDto: RemoveUserFromWorkspaceDto,
+    userId: number,
+  ) {
+    try {
+      const initiatorRole = await this.prisma.subscription.findFirst({
+        where: {
+          userId: userId,
+          workspaceId: removeUserFromWorkspaceDto.workspaceId,
+        },
+      });
+
+      if (!initiatorRole) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+      // Only Admin can remove
+      if (
+        initiatorRole.useRole === 'CAN_EDIT' ||
+        initiatorRole.useRole === 'READ_ONLY'
+      ) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+      // Check if the initiator workspace is same as user workspace
+      if (
+        initiatorRole.workspaceId !== removeUserFromWorkspaceDto.workspaceId
+      ) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+
+      // Check if user is in initiator workspace or not
+
+      const subscriber = await this.prisma.subscription.findFirst({
+        where: {
+          userId: removeUserFromWorkspaceDto.userId,
+          workspaceId: removeUserFromWorkspaceDto.workspaceId,
+        },
+      });
+
+      if (!subscriber) {
+        throw new NotFoundException('User not found');
+      }
+
+      await this.prisma.subscription.delete({
+        where: {
+          userId_workspaceId: {
+            userId: removeUserFromWorkspaceDto.userId,
+            workspaceId: removeUserFromWorkspaceDto.workspaceId,
+          },
+        },
+      });
+      return this.getWorkspaceSubscribers(
+        removeUserFromWorkspaceDto.workspaceId,
+      );
     } catch (error) {
       throw error;
     }

@@ -21,6 +21,8 @@ import { UpdateWorkspaceImageDto } from './dto/upload-workspace-image.dto';
 import { UpdateWorkSpaceDto } from './dto/update-workspace.dto';
 import { DeleteWorkspaceDto } from './dto/deleteWorkspace.dto';
 import { CreateInvitationDto } from './dto/createInvitation.dto';
+import { ChangeUserRoleDto } from './dto/changeUserrole.dto';
+import { RemoveUserFromWorkspaceDto } from './dto/removeUserFromWorkspace.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('workspace')
@@ -51,6 +53,11 @@ export class WorkspaceController {
     );
   }
 
+  @Get('subscribers/:id')
+  getWorkspaceSubscribers(@Param('id') id: string) {
+    return this.workspaceService.getWorkspaceSubscribers(+id);
+  }
+
   @Get('setting/:id')
   findSettingDetail(
     @Param('id') id: string,
@@ -65,6 +72,14 @@ export class WorkspaceController {
     @GetUser() user: { userId: number },
   ) {
     return this.workspaceService.userRoleForWorkspace(+id, user.userId);
+  }
+
+  @Post('change-user-role')
+  changeUserRole(
+    @Body() changeUserRoleDto: ChangeUserRoleDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.workspaceService.changeUserRole(changeUserRoleDto, user.userId);
   }
 
   @Post('create-invitation')
@@ -103,6 +118,17 @@ export class WorkspaceController {
   ) {
     return this.workspaceService.deleteWorkspace(
       deleteWorkspaceDto,
+      user.userId,
+    );
+  }
+
+  @Post('remove-user')
+  removeUserFromWorkspace(
+    @Body() removeUserFromWorkspaceDto: RemoveUserFromWorkspaceDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.workspaceService.removeUserFromWorkspace(
+      removeUserFromWorkspaceDto,
       user.userId,
     );
   }
