@@ -9,6 +9,7 @@ import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomColors } from '@prisma/client';
+import { DeleteTagDto } from './dto/delete-tag.dto';
 
 @Injectable()
 export class TagService {
@@ -48,6 +49,44 @@ export class TagService {
 
       const updatedTags = await this.prisma.tag.findMany({
         where: { workSpaceId: createTagDto.workspaceId },
+      });
+
+      return { success: true, tags: updatedTags };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteTag(deleteTagDto: DeleteTagDto, userId: number) {
+    try {
+      const workspace = await this.prisma.workSpace.findFirst({
+        where: { id: deleteTagDto.workspaceId },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+
+      const userSubscription = await this.prisma.subscription.findFirst({
+        where: { userId: userId, workspaceId: deleteTagDto.workspaceId },
+      });
+      if (!userSubscription) {
+        throw new ForbiddenException('Unauthorized');
+      }
+
+      if (
+        userSubscription.useRole === 'CAN_EDIT' ||
+        userSubscription.useRole === 'READ_ONLY'
+      ) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+
+      await this.prisma.tag.delete({
+        where: { id: deleteTagDto.id },
+      });
+
+      const updatedTags = await this.prisma.tag.findMany({
+        where: { workSpaceId: deleteTagDto.workspaceId },
       });
 
       return { success: true, tags: updatedTags };

@@ -13,6 +13,7 @@ import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/decorators/getUser';
+import { DeleteTagDto } from './dto/delete-tag.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('tag')
@@ -25,6 +26,14 @@ export class TagController {
     @GetUser() user: { userId: number },
   ) {
     return this.tagService.create(createTagDto, user.userId);
+  }
+
+  @Post('delete')
+  deleteTag(
+    @Body() deleteTagDto: DeleteTagDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.tagService.deleteTag(deleteTagDto, user.userId);
   }
 
   @Get()
