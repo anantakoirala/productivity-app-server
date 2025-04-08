@@ -13,6 +13,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { join } from 'path';
 import { PublicModule } from './public/public.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { TagModule } from './tag/tag.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -66,6 +67,8 @@ import { SubscriptionModule } from './subscription/subscription.module';
     PublicModule,
 
     SubscriptionModule,
+
+    TagModule,
   ],
   controllers: [AppController],
   providers: [AppService],

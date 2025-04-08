@@ -394,6 +394,23 @@ export class WorkspaceService {
     }
   }
 
+  async getWorkspaceTags(id: number) {
+    try {
+      const workspace = await this.prisma.workSpace.findFirst({
+        where: { id: id },
+        include: { tags: true },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+
+      return { success: true, tags: workspace.tags };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async changeUserRole(changeUserRoleDto: ChangeUserRoleDto, userId: number) {
     try {
       console.log('changeUserRoledto', changeUserRoleDto);

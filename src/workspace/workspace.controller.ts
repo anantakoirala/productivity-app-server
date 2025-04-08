@@ -53,6 +53,11 @@ export class WorkspaceController {
     );
   }
 
+  @Get('tags/:id')
+  getWorkspaceTags(@Param('id') id: string) {
+    return this.workspaceService.getWorkspaceTags(+id);
+  }
+
   @Get('subscribers/:id')
   getWorkspaceSubscribers(@Param('id') id: string) {
     return this.workspaceService.getWorkspaceSubscribers(+id);
