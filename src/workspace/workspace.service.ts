@@ -103,6 +103,15 @@ export class WorkspaceService {
       }
       const workspace = await this.prisma.workSpace.findUnique({
         where: { id: id, userId: userId },
+        include: {
+          tasks: {
+            select: {
+              id: true,
+              title: true,
+              emoji: true,
+            },
+          },
+        },
       });
       if (!workspace) {
         throw new NotFoundException('Workspace not found');
@@ -406,6 +415,23 @@ export class WorkspaceService {
       }
 
       return { success: true, tags: workspace.tags };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkspaceTasks(id: number) {
+    try {
+      const workspace = await this.prisma.workSpace.findFirst({
+        where: { id: id },
+        include: { tasks: true },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+
+      return { success: true, tasks: workspace.tasks };
     } catch (error) {
       throw error;
     }

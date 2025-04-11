@@ -63,6 +63,11 @@ export class WorkspaceController {
     return this.workspaceService.getWorkspaceSubscribers(+id);
   }
 
+  @Get('tasks/:id')
+  getWorkspaceTask(@Param('id') id: string) {
+    return this.workspaceService.getWorkspaceTasks(+id);
+  }
+
   @Get('setting/:id')
   findSettingDetail(
     @Param('id') id: string,

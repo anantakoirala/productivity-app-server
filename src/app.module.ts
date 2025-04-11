@@ -14,6 +14,7 @@ import { join } from 'path';
 import { PublicModule } from './public/public.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { TagModule } from './tag/tag.module';
+import { TaskModule } from './task/task.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -69,6 +70,8 @@ import { TagModule } from './tag/tag.module';
     SubscriptionModule,
 
     TagModule,
+
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [AppService],

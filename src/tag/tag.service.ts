@@ -81,6 +81,14 @@ export class TagService {
         throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
       }
 
+      const tag = await this.prisma.tag.findUnique({
+        where: { id: deleteTagDto.id },
+      });
+
+      if (!tag || tag.workSpaceId !== deleteTagDto.workspaceId) {
+        throw new ForbiddenException('Tag does not belong to this workspace');
+      }
+
       await this.prisma.tag.delete({
         where: { id: deleteTagDto.id },
       });
