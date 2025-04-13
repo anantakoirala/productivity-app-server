@@ -41,6 +41,8 @@ model User {
   useCase            UseCase?
   createdTasks       Task[]         @relation("TaskCreatedByUser")
   updatedTasks       Task[]         @relation("TaskUpdatedByUser")
+  createdMindMaps    MindMap[]      @relation("MindMapCreatedByUser")
+  updatedMindMaps    MindMap[]      @relation("MindMapUpdatedByUser")
 }
 
 model RefreshToken {
@@ -68,6 +70,7 @@ model WorkSpace {
   Invitation   Invitation[]
   tasks        Task[]
   tags         Tag[]
+  mindMaps     MindMap[]
 
   @@index([userId])
 }
@@ -133,6 +136,7 @@ model Tag {
   WorkSpace   WorkSpace?   @relation(fields: [workSpaceId], references: [id])
   workSpaceId Int?
   taskTags    TaskTag[]
+  MindMapTag  MindMapTag[]
 
   @@index([workSpaceId])
 }
@@ -145,6 +149,37 @@ model TaskTag {
   tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([taskId, tagId])
+  @@index([tagId])
+}
+
+model MindMap {
+  id            Int          @id @default(autoincrement())
+  title         String
+  content       Json?
+  emoji         String       @default("🧠")
+  updatedUserId Int?
+  updatedBy     User?        @relation(name: "MindMapUpdatedByUser", fields: [updatedUserId], references: [id])
+  creatorId     Int
+  creator       User         @relation(name: "MindMapCreatedByUser", fields: [creatorId], references: [id])
+  WorkSpace     WorkSpace?   @relation(fields: [workSpaceId], references: [id])
+  workSpaceId   Int?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  MindMapTag    MindMapTag[]
+
+  @@index([workSpaceId])
+  @@index([updatedUserId])
+  @@index([creatorId])
+}
+
+model MindMapTag {
+  mindMapId Int
+  tagId     Int
+
+  mindmap MindMap @relation(fields: [mindMapId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([mindMapId, tagId])
   @@index([tagId])
 }
 

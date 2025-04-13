@@ -15,6 +15,7 @@ import { PublicModule } from './public/public.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { TagModule } from './tag/tag.module';
 import { TaskModule } from './task/task.module';
+import { MindmapModule } from './mindmap/mindmap.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -72,6 +73,8 @@ import { TaskModule } from './task/task.module';
     TagModule,
 
     TaskModule,
+
+    MindmapModule,
   ],
   controllers: [AppController],
   providers: [AppService],

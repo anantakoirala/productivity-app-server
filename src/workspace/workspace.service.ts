@@ -111,6 +111,29 @@ export class WorkspaceService {
               emoji: true,
             },
           },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+              color: true,
+            },
+          },
+          mindMaps: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          Subscriber: {
+            where: {
+              userId: userId,
+              workspaceId: id,
+            },
+            select: {
+              useRole: true,
+            },
+          },
         },
       });
       if (!workspace) {
