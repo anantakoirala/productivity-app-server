@@ -82,8 +82,12 @@ export class MindmapController {
     return this.mindmapService.update(+id, updateMindmapDto, user.userId);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.mindmapService.remove(+id);
+  @Delete(':workspaceId/:mindMapId')
+  remove(
+    @Param('workspaceId') workspaceId: string,
+    @Param('mindMapId') mindMapId: string,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.mindmapService.remove(+workspaceId, +mindMapId, user.userId);
   }
 }

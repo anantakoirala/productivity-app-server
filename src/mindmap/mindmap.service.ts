@@ -333,7 +333,45 @@ export class MindmapService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} mindmap`;
+  async remove(workspaceId: number, mindMapId: number, userId: number) {
+    try {
+      const workspace = await this.prisma.workSpace.findFirst({
+        where: { id: workspaceId },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+
+      const userSubscription = await this.prisma.subscription.findFirst({
+        where: { userId: userId, workspaceId: workspaceId },
+      });
+      if (!userSubscription) {
+        throw new ForbiddenException('Unauthorized');
+      }
+
+      if (
+        userSubscription.useRole === 'CAN_EDIT' ||
+        userSubscription.useRole === 'READ_ONLY'
+      ) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+
+      const currentMindmap = await this.prisma.mindMap.findUnique({
+        where: { id: mindMapId, workSpaceId: workspaceId },
+      });
+
+      if (!currentMindmap) {
+        throw new NotFoundException('Mindmap not found');
+      }
+
+      await this.prisma.mindMap.delete({
+        where: { id: mindMapId, workSpaceId: workspaceId },
+      });
+
+      return { success: true, message: 'Mindmap deleted successfully' };
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
