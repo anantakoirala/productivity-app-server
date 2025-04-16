@@ -16,6 +16,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { TagModule } from './tag/tag.module';
 import { TaskModule } from './task/task.module';
 import { MindmapModule } from './mindmap/mindmap.module';
+import { PomodoroModule } from './pomodoro/pomodoro.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -75,6 +76,8 @@ import { MindmapModule } from './mindmap/mindmap.module';
     TaskModule,
 
     MindmapModule,
+
+    PomodoroModule,
   ],
   controllers: [AppController],
   providers: [AppService],

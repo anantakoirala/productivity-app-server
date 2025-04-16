@@ -26,23 +26,24 @@ enum UseCase {
 }
 
 model User {
-  id                 Int            @id @default(autoincrement())
-  email              String         @unique
+  id                 Int               @id @default(autoincrement())
+  email              String            @unique
   name               String
-  username           String         @unique
+  username           String            @unique
   password           String
   image              String?
-  completeOnBoarding Boolean        @default(false)
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  completeOnBoarding Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   RefreshToken       RefreshToken[]
   workspaces         WorkSpace[]
   Subscriptions      Subscription[]
   useCase            UseCase?
-  createdTasks       Task[]         @relation("TaskCreatedByUser")
-  updatedTasks       Task[]         @relation("TaskUpdatedByUser")
-  createdMindMaps    MindMap[]      @relation("MindMapCreatedByUser")
-  updatedMindMaps    MindMap[]      @relation("MindMapUpdatedByUser")
+  createdTasks       Task[]            @relation("TaskCreatedByUser")
+  updatedTasks       Task[]            @relation("TaskUpdatedByUser")
+  createdMindMaps    MindMap[]         @relation("MindMapCreatedByUser")
+  updatedMindMaps    MindMap[]         @relation("MindMapUpdatedByUser")
+  PomodoroSetting    PomodoroSetting[]
 }
 
 model RefreshToken {
@@ -181,6 +182,30 @@ model MindMapTag {
 
   @@id([mindMapId, tagId])
   @@index([tagId])
+}
+
+model PomodoroSetting {
+  id                 Int         @id @default(autoincrement())
+  userId             Int
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workDuration       Int         @default(25)
+  shortBreakDuration Int         @default(5)
+  longBreakDuration  Int         @default(15)
+  longBreakinterval  Int         @default(2)
+  rounds             Int         @default(3)
+  soundEffect        SoundEffect @default(ANALOG)
+  soundEffectVolume  Float       @default(0.5)
+
+  @@index([userId])
+}
+
+enum SoundEffect {
+  ANALOG
+  BIRD
+  CHURCH_BELL
+  DIGITAL
+  FANCY
+  BELL
 }
 
 enum CustomColors {
