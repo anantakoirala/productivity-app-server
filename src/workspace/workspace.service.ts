@@ -136,6 +136,8 @@ export class WorkspaceService {
           },
         },
       });
+
+      console.log('workspace', workspace);
       if (!workspace) {
         throw new NotFoundException('Workspace not found');
       }
@@ -420,6 +422,7 @@ export class WorkspaceService {
         workspaceId: subscriber.workspaceId,
       }));
 
+      console.log('sub', modifiedSubscribers);
       return { success: true, subscribers: modifiedSubscribers };
     } catch (error) {
       throw error;

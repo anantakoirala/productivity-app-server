@@ -16,11 +16,35 @@ import { GetUser } from 'src/decorators/getUser';
 import { UpdateMindMapDto } from './dto/update-mindmap.dto';
 import { UpdateMindMapTagsDto } from './dto/update-mindmap-tags.dto';
 import { UpdateMindMapInfoDto } from './dto/update-mindmap-info.dto';
+import { AssignUserToMindmapDto } from './dto/assign-user-to-mindmap';
+import { RemoveUserFromMindmapDto } from './dto/remove-user-from-mindmap.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('mindmap')
 export class MindmapController {
   constructor(private readonly mindmapService: MindmapService) {}
+
+  @Post('asign-user')
+  assignUserToTask(
+    @Body() assignUserToMindmapDto: AssignUserToMindmapDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.mindmapService.assignUserToMindmap(
+      assignUserToMindmapDto,
+      user.userId,
+    );
+  }
+
+  @Post('remove-user')
+  removeUserFromTask(
+    @Body() removeUserFromMindmapDto: RemoveUserFromMindmapDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.mindmapService.removeUserFromMindmap(
+      removeUserFromMindmapDto,
+      user.userId,
+    );
+  }
 
   @Post()
   create(

@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -9,6 +10,8 @@ import { CreateTaskDto } from './dto/create-task.dto';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { AssignUserToTaskDto } from './dto/assign-user-to-task.dto';
+import { RemoveUserFromTaskDto } from './dto/remove-user-from-task.dto';
 
 @Injectable()
 export class TaskService {
@@ -78,12 +81,160 @@ export class TaskService {
               },
             },
           },
+          AssignedToTask: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true,
+                },
+              },
+            },
+          },
         },
       });
+
       if (!task) {
         throw new NotFoundException('Task not found');
       }
       return { success: true, task };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async assignUserToTask(
+    assignUserToTask: AssignUserToTaskDto,
+    userId: number,
+  ) {
+    const workspace = await this.prisma.workSpace.findFirst({
+      where: { id: assignUserToTask.workspaceId },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+
+    const userSubscription = await this.prisma.subscription.findFirst({
+      where: { userId: userId, workspaceId: assignUserToTask.workspaceId },
+    });
+    if (!userSubscription) {
+      throw new ForbiddenException('Unauthorized');
+    }
+    if (userSubscription.useRole === 'READ_ONLY') {
+      throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+    }
+    const task = await this.prisma.task.findUnique({
+      where: { id: assignUserToTask.taskId },
+    });
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+    const userToAssign = await this.prisma.user.findUnique({
+      where: { id: assignUserToTask.userId },
+    });
+
+    if (!userToAssign) {
+      throw new NotFoundException('User to assign not found');
+    }
+
+    const existingAssignment = await this.prisma.assignedToTask.findUnique({
+      where: {
+        userId_taskId: {
+          userId: assignUserToTask.userId,
+          taskId: assignUserToTask.taskId,
+        },
+      },
+    });
+
+    if (existingAssignment) {
+      throw new ConflictException('User already assigned to this task');
+    }
+
+    const assignment = await this.prisma.assignedToTask.create({
+      data: {
+        userId: assignUserToTask.userId,
+        taskId: assignUserToTask.taskId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+          },
+        },
+      },
+    });
+
+    return { success: true, assignment };
+
+    try {
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async removeUserFromTask(
+    removeUserFromTaskDto: RemoveUserFromTaskDto,
+    userId: number,
+  ) {
+    try {
+      const workspace = await this.prisma.workSpace.findFirst({
+        where: { id: removeUserFromTaskDto.workspaceId },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+
+      const userSubscription = await this.prisma.subscription.findFirst({
+        where: {
+          userId: userId,
+          workspaceId: removeUserFromTaskDto.workspaceId,
+        },
+      });
+      if (!userSubscription) {
+        throw new ForbiddenException('Unauthorized');
+      }
+      if (userSubscription.useRole === 'READ_ONLY') {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+      const task = await this.prisma.task.findUnique({
+        where: { id: removeUserFromTaskDto.taskId },
+      });
+
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+
+      if (task.workspaceId !== removeUserFromTaskDto.workspaceId) {
+        throw new ForbiddenException('Task does not belong to this workspace');
+      }
+
+      const checkUser = await this.prisma.assignedToTask.findUnique({
+        where: {
+          userId_taskId: {
+            userId: removeUserFromTaskDto.userId,
+            taskId: removeUserFromTaskDto.taskId,
+          },
+        },
+      });
+
+      if (!checkUser) {
+        throw new NotFoundException('Asignee not found');
+      }
+      await this.prisma.assignedToTask.delete({
+        where: {
+          userId_taskId: {
+            userId: removeUserFromTaskDto.userId,
+            taskId: removeUserFromTaskDto.taskId,
+          },
+        },
+      });
+
+      return { success: true, message: 'User unassigned from task' };
     } catch (error) {
       throw error;
     }

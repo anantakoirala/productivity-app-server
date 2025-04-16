@@ -26,24 +26,26 @@ enum UseCase {
 }
 
 model User {
-  id                 Int               @id @default(autoincrement())
-  email              String            @unique
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
   name               String
-  username           String            @unique
+  username           String              @unique
   password           String
   image              String?
-  completeOnBoarding Boolean           @default(false)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  completeOnBoarding Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   RefreshToken       RefreshToken[]
   workspaces         WorkSpace[]
   Subscriptions      Subscription[]
   useCase            UseCase?
-  createdTasks       Task[]            @relation("TaskCreatedByUser")
-  updatedTasks       Task[]            @relation("TaskUpdatedByUser")
-  createdMindMaps    MindMap[]         @relation("MindMapCreatedByUser")
-  updatedMindMaps    MindMap[]         @relation("MindMapUpdatedByUser")
+  createdTasks       Task[]              @relation("TaskCreatedByUser")
+  updatedTasks       Task[]              @relation("TaskUpdatedByUser")
+  createdMindMaps    MindMap[]           @relation("MindMapCreatedByUser")
+  updatedMindMaps    MindMap[]           @relation("MindMapUpdatedByUser")
   PomodoroSetting    PomodoroSetting[]
+  AssignedToTask     AssignedToTask[]
+  AssignedToMindmap  AssignedToMindmap[]
 }
 
 model RefreshToken {
@@ -100,21 +102,22 @@ model Invitation {
 }
 
 model Task {
-  id            Int       @id @default(autoincrement())
-  title         String?   @default("Untitled task")
-  emoji         String    @default("🧠")
-  content       Json?
-  creatorId     Int
-  creator       User      @relation(name: "TaskCreatedByUser", fields: [creatorId], references: [id])
-  updatedUserId Int?
-  updatedBy     User?     @relation(name: "TaskUpdatedByUser", fields: [updatedUserId], references: [id])
-  workspaceId   Int
-  workspace     WorkSpace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  dateId        Int?
-  date          TaskDate? @relation(fields: [dateId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  taskTags      TaskTag[]
+  id             Int              @id @default(autoincrement())
+  title          String?          @default("Untitled task")
+  emoji          String           @default("🧠")
+  content        Json?
+  creatorId      Int
+  creator        User             @relation(name: "TaskCreatedByUser", fields: [creatorId], references: [id])
+  updatedUserId  Int?
+  updatedBy      User?            @relation(name: "TaskUpdatedByUser", fields: [updatedUserId], references: [id])
+  workspaceId    Int
+  workspace      WorkSpace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  dateId         Int?
+  date           TaskDate?        @relation(fields: [dateId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  taskTags       TaskTag[]
+  AssignedToTask AssignedToTask[]
 
   @@index([updatedUserId])
   @@index([creatorId])
@@ -154,19 +157,20 @@ model TaskTag {
 }
 
 model MindMap {
-  id            Int          @id @default(autoincrement())
-  title         String
-  content       Json?
-  emoji         String       @default("🧠")
-  updatedUserId Int?
-  updatedBy     User?        @relation(name: "MindMapUpdatedByUser", fields: [updatedUserId], references: [id])
-  creatorId     Int
-  creator       User         @relation(name: "MindMapCreatedByUser", fields: [creatorId], references: [id])
-  WorkSpace     WorkSpace?   @relation(fields: [workSpaceId], references: [id])
-  workSpaceId   Int?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  MindMapTag    MindMapTag[]
+  id                Int                 @id @default(autoincrement())
+  title             String
+  content           Json?
+  emoji             String              @default("🧠")
+  updatedUserId     Int?
+  updatedBy         User?               @relation(name: "MindMapUpdatedByUser", fields: [updatedUserId], references: [id])
+  creatorId         Int
+  creator           User                @relation(name: "MindMapCreatedByUser", fields: [creatorId], references: [id])
+  WorkSpace         WorkSpace?          @relation(fields: [workSpaceId], references: [id])
+  workSpaceId       Int?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  MindMapTag        MindMapTag[]
+  AssignedToMindmap AssignedToMindmap[]
 
   @@index([workSpaceId])
   @@index([updatedUserId])
@@ -182,6 +186,27 @@ model MindMapTag {
 
   @@id([mindMapId, tagId])
   @@index([tagId])
+}
+
+model AssignedToTask {
+  taskId Int
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, taskId])
+  @@index([userId, taskId])
+}
+
+model AssignedToMindmap {
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  mindmapId Int
+  mindmap   MindMap @relation(fields: [mindmapId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mindmapId])
+  @@index([userId, mindmapId])
 }
 
 model PomodoroSetting {

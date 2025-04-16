@@ -14,11 +14,32 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/decorators/getUser';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { AssignUserToTaskDto } from './dto/assign-user-to-task.dto';
+import { RemoveUserFromTaskDto } from './dto/remove-user-from-task.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('task')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
+
+  @Post('asign-user')
+  assignUserToTask(
+    @Body() assignUserToTask: AssignUserToTaskDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.taskService.assignUserToTask(assignUserToTask, user.userId);
+  }
+
+  @Post('remove-user')
+  removeUserFromTask(
+    @Body() removeUserFromTaskDto: RemoveUserFromTaskDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.taskService.removeUserFromTask(
+      removeUserFromTaskDto,
+      user.userId,
+    );
+  }
 
   @Post()
   create(
