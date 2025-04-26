@@ -6,6 +6,7 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -138,8 +139,13 @@ export class AuthController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('logout')
-  logout(@Res() res: Response) {
-    this.authService.logout(res);
+  async logout(@Req() req: Request, @Res() res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token found in cookies');
+    }
+    await this.authService.logout(refreshToken, res);
     return res.status(HttpStatus.OK).json({
       success: true,
       message: 'LogOut Successfully',

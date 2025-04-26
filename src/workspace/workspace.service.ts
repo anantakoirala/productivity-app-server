@@ -21,6 +21,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { ChangeUserRoleDto } from './dto/changeUserrole.dto';
 import { RemoveUserFromWorkspaceDto } from './dto/removeUserFromWorkspace.dto';
+import { startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
 export class WorkspaceService {
@@ -49,6 +50,13 @@ export class WorkspaceService {
             adminCode: uuidv4(),
             canEditCode: uuidv4(),
             readOnlyCode: uuidv4(),
+          },
+        });
+
+        //  Create the conversation for this workspace
+        await prisma.conversation.create({
+          data: {
+            workSpaceId: workspace.id,
           },
         });
 
@@ -101,10 +109,18 @@ export class WorkspaceService {
       if (!user) {
         throw new NotFoundException('user not found');
       }
+
+      const todayStart = startOfDay(new Date());
+      const todayEnd = endOfDay(new Date());
+
       const workspace = await this.prisma.workSpace.findUnique({
-        where: { id: id, userId: userId },
+        where: { id: id },
         include: {
           tasks: {
+            where: {
+              from: { lte: todayEnd },
+              to: { gte: todayStart },
+            },
             select: {
               id: true,
               title: true,
@@ -134,10 +150,27 @@ export class WorkspaceService {
               useRole: true,
             },
           },
+          Conversation: {
+            select: {
+              id: true,
+            },
+          },
+          WorkspaceProject: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
         },
       });
 
-      console.log('workspace', workspace);
+      const userSubscription = await this.prisma.subscription.findFirst({
+        where: { userId: userId, workspaceId: workspace.id },
+      });
+      if (!userSubscription) {
+        throw new ForbiddenException('Unauthorized');
+      }
+
       if (!workspace) {
         throw new NotFoundException('Workspace not found');
       }
@@ -235,7 +268,6 @@ export class WorkspaceService {
     file: any,
   ) {
     try {
-      console.log('file', file);
       const workspace = await this.prisma.workSpace.findUnique({
         where: { id: +updateWorkspaceImageDto.workspaceId },
       });

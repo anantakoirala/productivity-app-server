@@ -46,6 +46,8 @@ model User {
   PomodoroSetting    PomodoroSetting[]
   AssignedToTask     AssignedToTask[]
   AssignedToMindmap  AssignedToMindmap[]
+  Message            Message[]
+  Notification       Notification[]
 }
 
 model RefreshToken {
@@ -58,22 +60,24 @@ model RefreshToken {
 }
 
 model WorkSpace {
-  id           Int            @id @default(autoincrement())
-  name         String
-  image        String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  userId       Int?
-  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Subscriber   Subscription[]
-  inviteCode   String         @unique
-  adminCode    String         @unique
-  canEditCode  String         @unique
-  readOnlyCode String         @unique
-  Invitation   Invitation[]
-  tasks        Task[]
-  tags         Tag[]
-  mindMaps     MindMap[]
+  id               Int            @id @default(autoincrement())
+  name             String
+  image            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  userId           Int?
+  user             User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Subscriber       Subscription[]
+  inviteCode       String         @unique
+  adminCode        String         @unique
+  canEditCode      String         @unique
+  readOnlyCode     String         @unique
+  Invitation       Invitation[]
+  tasks            Task[]
+  tags             Tag[]
+  mindMaps         MindMap[]
+  Conversation     Conversation[]
+  WorkspaceProject Project[]
 
   @@index([userId])
 }
@@ -106,30 +110,22 @@ model Task {
   title          String?          @default("Untitled task")
   emoji          String           @default("🧠")
   content        Json?
+  from           DateTime?
+  to             DateTime?
   creatorId      Int
   creator        User             @relation(name: "TaskCreatedByUser", fields: [creatorId], references: [id])
   updatedUserId  Int?
   updatedBy      User?            @relation(name: "TaskUpdatedByUser", fields: [updatedUserId], references: [id])
   workspaceId    Int
   workspace      WorkSpace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  dateId         Int?
-  date           TaskDate?        @relation(fields: [dateId], references: [id])
+  projectId      Int
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   taskTags       TaskTag[]
   AssignedToTask AssignedToTask[]
 
-  @@index([updatedUserId])
-  @@index([creatorId])
   @@index([workspaceId])
-}
-
-model TaskDate {
-  id   Int     @id @default(autoincrement())
-  from String?
-  to   String?
-
-  Task Task[]
 }
 
 model Tag {
@@ -188,6 +184,14 @@ model MindMapTag {
   @@index([tagId])
 }
 
+model Project {
+  id          Int       @id @default(autoincrement())
+  title       String
+  WorkSpace   WorkSpace @relation(fields: [workSpaceId], references: [id], onDelete: Cascade)
+  workSpaceId Int
+  tasks       Task[]
+}
+
 model AssignedToTask {
   taskId Int
   task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -222,6 +226,63 @@ model PomodoroSetting {
   soundEffectVolume  Float       @default(0.5)
 
   @@index([userId])
+}
+
+model Conversation {
+  id          Int       @id @default(autoincrement())
+  WorkSpace   WorkSpace @relation(fields: [workSpaceId], references: [id], onDelete: Cascade)
+  workSpaceId Int
+
+  Messages     Message[]
+  Notification Notification[]
+}
+
+model Message {
+  id                 Int                  @id @default(autoincrement())
+  Conversation       Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId     Int
+  sender             User                 @relation(fields: [senderId], references: [id])
+  senderId           Int
+  content            String
+  edited             Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  AdditionalResource AdditionalResource[]
+  Notification       Notification[]
+}
+
+model AdditionalResource {
+  id        Int                     @id @default(autoincrement())
+  message   Message?                @relation(fields: [messageId], references: [id])
+  messageId Int?
+  type      AdditionalResourceTypes
+  name      String
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  type           NotificationType
+  userId         Int
+  user           User             @relation(fields: [userId], references: [id])
+  messageId      Int?
+  message        Message?         @relation(fields: [messageId], references: [id])
+  conversationId Int
+  conversation   Conversation     @relation(fields: [conversationId], references: [id])
+  isRead         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+}
+
+enum NotificationType {
+  MESSAGE
+  MENTION
+  REACTION
+  SYSTEM
+}
+
+enum AdditionalResourceTypes {
+  PDF
+  Image
+  UNKNOWN
 }
 
 enum SoundEffect {

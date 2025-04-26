@@ -176,19 +176,21 @@ export class AuthService {
 
     return { accessToken, refreshToken };
   }
-  async storeRefreshToken(userId: number, token: string) {
-    const expirySeconds = Number(process.env.REFRESH_TOKEN_EXPIRY) || 604800; // Default to 7 days in seconds
-    const expiryDate = new Date(Date.now() + expirySeconds * 1000); // Convert seconds to milliseconds
+  // async storeRefreshToken(userId: number, token: string) {
+  //   console.log('refresh token expiry', process.env.REFRESH_TOKEN_EXPIRY);
+  //   const expirySeconds = Number(process.env.REFRESH_TOKEN_EXPIRY) || 604800; // Default to 7 days in seconds
 
-    await this.prisma.refreshToken.create({
-      data: {
-        userId,
-        token,
-        expiresAt: expiryDate,
-      },
-    });
-    return;
-  }
+  //   const expiryDate = new Date(Date.now() + expirySeconds * 1000); // Convert seconds to milliseconds
+  //   console.log('expiry date', expiryDate);
+  //   await this.prisma.refreshToken.create({
+  //     data: {
+  //       userId,
+  //       token,
+  //       expiresAt: expiryDate,
+  //     },
+  //   });
+  //   return;
+  // }
   async getUser(userId: number) {
     try {
       const user = await this.prisma.user.findUnique({
@@ -223,8 +225,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
+    // console.log('expirest', storedToken.expiresAt);
+    // console.log('now', Date.now());
+
     // Check if refresh token has expired
-    if (new Date(storedToken.expiresAt) < new Date()) {
+    if (new Date(storedToken.expiresAt).getTime() < Date.now()) {
+      await this.prisma.refreshToken.delete({
+        where: { id: storedToken.id },
+      });
       throw new UnauthorizedException(
         'Refresh token has expired. Please log in again.',
       );
@@ -252,8 +260,11 @@ export class AuthService {
       refreshToken: token.refreshToken,
     };
   }
-  logout(res: Response) {
+  async logout(refreshToken: string, res: Response) {
     try {
+      await this.prisma.refreshToken.delete({
+        where: { token: refreshToken },
+      });
       res.clearCookie('token');
       res.clearCookie('refresh_token');
     } catch (error) {

@@ -29,11 +29,14 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/platform-socket.io": "^10.2.6",
+    "@nestjs/websockets": "^10.2.6",
     "@prisma/client": "^6.5.0",
     "@types/cookie-parser": "^1.4.8",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "D": "^1.0.0",
+    "date-fns": "^4.1.0",
     "handlebars": "^4.7.8",
     "nestjs-zod": "^4.3.1",
     "nodemailer": "^6.10.0",
@@ -42,6 +45,7 @@
     "passport-local": "^1.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

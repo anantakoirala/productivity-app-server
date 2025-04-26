@@ -115,11 +115,18 @@ export class UserService {
           data: {
             name: createWorkSpaceData.workspacename,
             userId: userId,
-            image: file ? file.filename : null, // ✅ Assign filename if file exists
+            image: file ? file.filename : null,
             inviteCode: uuidv4(),
             adminCode: uuidv4(),
             canEditCode: uuidv4(),
             readOnlyCode: uuidv4(),
+          },
+        });
+
+        //  Create the conversation for this workspace
+        await prisma.conversation.create({
+          data: {
+            workSpaceId: workspace.id,
           },
         });
 

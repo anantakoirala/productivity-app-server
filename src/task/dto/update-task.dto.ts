@@ -6,6 +6,7 @@ const WorkSpaceSchema = z.object({
   icon: z.string().optional(),
   title: z.string().optional(),
   activeTagIds: z.array(z.number()),
+  projectId: z.coerce.number().min(1, 'Project is required'),
   date: z
     .object({
       from: z.string().optional(),

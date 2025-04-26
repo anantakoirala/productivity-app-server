@@ -17,6 +17,10 @@ import { TagModule } from './tag/tag.module';
 import { TaskModule } from './task/task.module';
 import { MindmapModule } from './mindmap/mindmap.module';
 import { PomodoroModule } from './pomodoro/pomodoro.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { ChatModule } from './chat/chat.module';
+import { SocketModule } from './socket/socket.module';
+import { ProjectModule } from './project/project.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -78,6 +82,14 @@ import { PomodoroModule } from './pomodoro/pomodoro.module';
     MindmapModule,
 
     PomodoroModule,
+
+    CalendarModule,
+
+    ChatModule,
+
+    SocketModule,
+
+    ProjectModule,
   ],
   controllers: [AppController],
   providers: [AppService],

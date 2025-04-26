@@ -43,6 +43,8 @@ export class TaskService {
         data: {
           workspaceId: createTaskDto.workspaceId,
           creatorId: userId,
+          projectId: createTaskDto.projectId,
+          title: createTaskDto.name,
         },
       });
       return { success: true, task };
@@ -68,7 +70,6 @@ export class TaskService {
       const task = await this.prisma.task.findFirst({
         where: { id: taskId, workspaceId: workspace.id },
         include: {
-          date: true,
           taskTags: {
             include: {
               tag: {
@@ -273,26 +274,26 @@ export class TaskService {
 
       const updatedTask = await this.prisma.$transaction(
         async (tx) => {
-          let taskDateId = currentTask.dateId;
+          // let taskDateId = currentTask.dateId;
 
-          // Update or create TaskDate
-          if (currentTask.dateId) {
-            await tx.taskDate.update({
-              where: { id: currentTask.dateId },
-              data: {
-                from: updateTaskDto.date.from,
-                to: updateTaskDto.date.to,
-              },
-            });
-          } else {
-            const newDate = await tx.taskDate.create({
-              data: {
-                from: updateTaskDto.date.from,
-                to: updateTaskDto.date.to,
-              },
-            });
-            taskDateId = newDate.id;
-          }
+          // // Update or create TaskDate
+          // if (currentTask.dateId) {
+          //   await tx.taskDate.update({
+          //     where: { id: currentTask.dateId },
+          //     data: {
+          //       from: updateTaskDto.date.from,
+          //       to: updateTaskDto.date.to,
+          //     },
+          //   });
+          // } else {
+          //   const newDate = await tx.taskDate.create({
+          //     data: {
+          //       from: updateTaskDto.date.from,
+          //       to: updateTaskDto.date.to,
+          //     },
+          //   });
+          //   taskDateId = newDate.id;
+          // }
 
           const updated = await tx.task.update({
             where: { id: currentTask.id },
@@ -300,7 +301,9 @@ export class TaskService {
               title: updateTaskDto.title,
               emoji: updateTaskDto.icon,
               content: updateTaskDto.content,
-              dateId: taskDateId,
+              from: updateTaskDto.date?.from ?? null,
+              to: updateTaskDto.date?.to ?? null,
+              projectId: updateTaskDto.projectId,
               taskTags: {
                 deleteMany: {
                   tagId: { in: tagsToDisconnect },
