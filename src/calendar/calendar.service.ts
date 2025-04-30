@@ -23,22 +23,17 @@ export class CalendarService {
       if (!userSubscriptions) {
         return { success: true, allTasks: [] };
       }
-      // const allTasks = userSubscriptions.flatMap((subscription) => {
-      //   return subscription.workspace.tasks.map((task) => ({
-      //     title: task.title,
-      //     taskDate: task.date?.from
-      //       ? {
-      //           id: task.date.id,
-      //           from: task.date.from ? new Date(task.date.from) : undefined,
-      //           to: task.date.to ? new Date(task.date.to) : undefined,
-      //         }
-      //       : null,
-      //     workspaceId: subscription.workspace.id,
-      //     workspaceName: subscription.workspace.name,
-      //     taskId: task.id,
-      //   }));
-      // });
-      return { success: true };
+      const allTasks = userSubscriptions.flatMap((subscription) => {
+        return subscription.workspace.tasks.map((task) => ({
+          title: task.title,
+          taskDate: task.date ? new Date(task.date) : undefined,
+
+          workspaceId: subscription.workspace.id,
+          workspaceName: subscription.workspace.name,
+          taskId: task.id,
+        }));
+      });
+      return { success: true, allTasks };
     } catch (error) {
       throw error;
     }

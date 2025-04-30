@@ -14,11 +14,20 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/decorators/getUser';
+import { DeleteProjectDto } from './dto/delete-project.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('project')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
+
+  @Post('delete-project')
+  deleteProject(
+    @Body() deleteProjectDto: DeleteProjectDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.projectService.deleteProject(deleteProjectDto, user.userId);
+  }
 
   @Post()
   create(
@@ -51,8 +60,12 @@ export class ProjectController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
-    return this.projectService.update(+id, updateProjectDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateProjectDto: UpdateProjectDto,
+    @GetUser() user: { userId: number },
+  ) {
+    return this.projectService.update(+id, updateProjectDto, user.userId);
   }
 
   @Delete(':id')

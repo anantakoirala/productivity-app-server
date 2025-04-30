@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -52,6 +53,21 @@ export class TaskController {
   @Get()
   findAll() {
     return this.taskService.findAll();
+  }
+
+  @Get(':workspaceId')
+  assignedToMe(
+    @Param('workspaceId') workspaceId: string,
+    @GetUser() user: { userId: number },
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ) {
+    return this.taskService.assignedToMe(
+      +workspaceId,
+      user.userId,
+      +page,
+      +limit,
+    );
   }
 
   @Get(':workspaceId/:taskId')

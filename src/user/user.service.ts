@@ -134,7 +134,7 @@ export class UserService {
           data: {
             userId: userId,
             workspaceId: workspace.id,
-            useRole: 'ADMIN',
+            useRole: 'OWNER',
           },
         });
         return updatedUser;

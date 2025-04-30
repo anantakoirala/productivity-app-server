@@ -45,6 +45,7 @@ export class TaskService {
           creatorId: userId,
           projectId: createTaskDto.projectId,
           title: createTaskDto.name,
+          date: new Date(),
         },
       });
       return { success: true, task };
@@ -301,8 +302,7 @@ export class TaskService {
               title: updateTaskDto.title,
               emoji: updateTaskDto.icon,
               content: updateTaskDto.content,
-              from: updateTaskDto.date?.from ?? null,
-              to: updateTaskDto.date?.to ?? null,
+              date: updateTaskDto.date ?? null,
               projectId: updateTaskDto.projectId,
               taskTags: {
                 deleteMany: {
@@ -347,5 +347,98 @@ export class TaskService {
 
   remove(id: number) {
     return `This action removes a #${id} task`;
+  }
+
+  async assignedToMe(
+    workspaceId: number,
+    userId: number,
+    page: number = 1,
+    limit: number,
+  ) {
+    const offset = (page - 1) * limit;
+
+    // Fetching the assigned tasks
+    const assignedTasks = await this.prisma.assignedToTask.findMany({
+      where: {
+        userId: userId,
+        task: {
+          workspaceId: workspaceId,
+        },
+      },
+      orderBy: {
+        task: {
+          createdAt: 'desc',
+        },
+      },
+      skip: offset,
+      take: limit,
+      include: {
+        task: {
+          select: {
+            id: true,
+            title: true,
+            emoji: true,
+            date: true,
+
+            createdAt: true,
+            updatedAt: true,
+            creator: {
+              select: {
+                name: true,
+              },
+            },
+            project: {
+              select: {
+                title: true,
+              },
+            },
+            AssignedToTask: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Modify the tasks with the required structure
+    const modifiedTasks = assignedTasks.map((assignedTask) => ({
+      id: assignedTask.task.id,
+      title: assignedTask.task.title,
+      emoji: assignedTask.task.emoji,
+      from: assignedTask.task.date,
+      createdAt: assignedTask.task.createdAt,
+      updatedAt: assignedTask.task.updatedAt,
+      creatorName: assignedTask.task.creator?.name || null,
+      assignedTo:
+        assignedTask.task.AssignedToTask.map(
+          (assignment) => assignment.user?.name,
+        ) || [],
+    }));
+
+    // Count the total tasks assigned to the user
+    const totalTasks = await this.prisma.assignedToTask.count({
+      where: {
+        userId: userId,
+        task: {
+          workspaceId: workspaceId,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      tasks: modifiedTasks,
+      pagination: {
+        totalTasks,
+        page,
+        totalPages: Math.ceil(totalTasks / limit),
+      },
+    };
   }
 }

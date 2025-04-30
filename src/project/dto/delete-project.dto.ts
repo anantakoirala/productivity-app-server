@@ -2,8 +2,8 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 const WorkSpaceSchema = z.object({
-  name: z.string().min(2).max(30),
+  projectId: z.number(),
   workspaceId: z.number(),
 });
 
-export class UpdateProjectDto extends createZodDto(WorkSpaceSchema) {}
+export class DeleteProjectDto extends createZodDto(WorkSpaceSchema) {}

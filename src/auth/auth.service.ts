@@ -135,6 +135,7 @@ export class AuthService {
   }
 
   async validateInviteToken(token: string, email: string) {
+    console.log('hello');
     const invitation = await this.prisma.invitation.findFirst({
       where: { token: token, email: email },
     });

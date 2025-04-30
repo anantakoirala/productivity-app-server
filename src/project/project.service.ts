@@ -8,6 +8,7 @@ import {
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DeleteProjectDto } from './dto/delete-project.dto';
 
 @Injectable()
 export class ProjectService {
@@ -102,11 +103,15 @@ export class ProjectService {
         },
       });
 
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+
       const modifiedTasks = project.tasks.map((task) => ({
         id: task.id,
         title: task.title,
         emoji: task.emoji,
-        from: task.from,
+        from: task.date,
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         creatorName: task.creator?.name || null,
@@ -114,7 +119,7 @@ export class ProjectService {
           task.AssignedToTask.map((assignment) => assignment.user?.name) || [],
       }));
 
-      // ✅ return project normally but replace tasks with modifiedTasks
+      // return project normally but replace tasks with modifiedTasks
       const modifiedProject = {
         ...project,
         tasks: modifiedTasks,
@@ -142,8 +147,80 @@ export class ProjectService {
     }
   }
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
+  async deleteProject(deleteProjectDto: DeleteProjectDto, userId: number) {
+    try {
+      const workspace = await this.prisma.workSpace.findFirst({
+        where: { id: deleteProjectDto.workspaceId },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+      const userSubscription = await this.prisma.subscription.findFirst({
+        where: { userId: userId, workspaceId: deleteProjectDto.workspaceId },
+      });
+      if (!userSubscription) {
+        throw new ForbiddenException('Unauthorized');
+      }
+      if (
+        userSubscription.useRole === 'CAN_EDIT' ||
+        userSubscription.useRole === 'READ_ONLY'
+      ) {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+
+      await this.prisma.project.delete({
+        where: {
+          id: deleteProjectDto.projectId,
+        },
+      });
+
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async update(id: number, updateProjectDto: UpdateProjectDto, userId: number) {
+    try {
+      const workspace = await this.prisma.workSpace.findFirst({
+        where: { id: updateProjectDto.workspaceId },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Workspace not found');
+      }
+      const userSubscription = await this.prisma.subscription.findFirst({
+        where: { userId: userId, workspaceId: updateProjectDto.workspaceId },
+      });
+      if (!userSubscription) {
+        throw new ForbiddenException('Unauthorized');
+      }
+      if (userSubscription.useRole === 'READ_ONLY') {
+        throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
+      }
+
+      const project = await this.prisma.project.findUnique({
+        where: { id: id },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+
+      const updatedProject = await this.prisma.project.update({
+        where: {
+          id: id,
+          workSpaceId: updateProjectDto.workspaceId,
+        },
+        data: {
+          title: updateProjectDto.name,
+        },
+      });
+
+      return { success: true, updatedProject };
+    } catch (error) {
+      throw error;
+    }
   }
 
   remove(id: number) {

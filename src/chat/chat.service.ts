@@ -111,6 +111,15 @@ export class ChatService {
       const limit = 10;
       const skip = (pageNumber - 1) * limit;
 
+      const totalMessages = await this.prisma.message.count({
+        where: {
+          conversationId: chatId,
+        },
+      });
+
+      console.log('totalMessages', totalMessages);
+      const totalPages = Math.ceil(totalMessages / limit);
+
       const conversation = await this.prisma.conversation.findUnique({
         where: {
           id: chatId,
@@ -136,11 +145,12 @@ export class ChatService {
           },
         },
       });
+
       if (!conversation) {
         throw new NotFoundException('Conversation not found');
       }
 
-      return { success: true, conversation };
+      return { success: true, conversation, totalPages };
     } catch (error) {
       throw error;
     }

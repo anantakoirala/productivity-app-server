@@ -133,10 +133,7 @@ export class TagService {
         throw new ForbiddenException('Unauthorized');
       }
 
-      if (
-        userSubscription.useRole === 'CAN_EDIT' ||
-        userSubscription.useRole === 'READ_ONLY'
-      ) {
+      if (userSubscription.useRole === 'READ_ONLY') {
         throw new HttpException('Not allowed', HttpStatus.FORBIDDEN);
       }
 

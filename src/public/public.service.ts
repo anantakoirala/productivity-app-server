@@ -22,6 +22,9 @@ export class PublicService {
         },
       });
       console.log('result', result);
+      if (!result) {
+        throw new NotFoundException('Not found');
+      }
       return { success: true, inviteData: result };
     } catch (error) {
       throw error;

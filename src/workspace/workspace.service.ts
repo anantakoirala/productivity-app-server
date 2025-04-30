@@ -64,7 +64,7 @@ export class WorkspaceService {
           data: {
             userId: userId,
             workspaceId: workspace.id,
-            useRole: 'ADMIN',
+            useRole: 'OWNER',
           },
         });
         return workspace;
@@ -118,8 +118,10 @@ export class WorkspaceService {
         include: {
           tasks: {
             where: {
-              from: { lte: todayEnd },
-              to: { gte: todayStart },
+              date: {
+                gte: todayStart, // date is greater than or equal to today at 00:00
+                lte: todayEnd, // and less than or equal to today at 23:59
+              },
             },
             select: {
               id: true,
@@ -159,6 +161,10 @@ export class WorkspaceService {
             select: {
               id: true,
               title: true,
+              workSpaceId: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
             },
           },
         },
@@ -192,7 +198,14 @@ export class WorkspaceService {
       if (!workspace) {
         throw new NotFoundException('Workspace not found');
       }
-      return { success: true, workspace };
+
+      const userSubscription = await this.prisma.subscription.findFirst({
+        where: { userId: userId, workspaceId: id },
+      });
+      if (!userSubscription) {
+        throw new ForbiddenException('Unauthorized');
+      }
+      return { success: true, workspace, role: userSubscription.useRole };
     } catch (error) {
       throw error;
     }
